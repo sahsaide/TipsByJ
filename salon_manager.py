@@ -40,7 +40,6 @@ class SalonManager:
         print("\n--- Artist Schedules ---")
         for i, artist in enumerate(self.artists):
             print(f"\n{i + 1}. {artist}")
-            # Loop through the dictionary to show days/times
             schedule = artist.get_schedule()
             for day, times in schedule.items():
                 print(f"   - {day}: {times}")
@@ -55,7 +54,7 @@ class SalonManager:
             artist = self.artists[a_choice]
 
             print(f"\n{artist} is available on: {artist.get_days_available()}")
-            day = input("Enter Day (e.g. Tuesday): ").capitalize() # Capitalize fixes 'tuesday' input
+            day = input("Enter Day (e.g. Tuesday): ").capitalize()
 
             if day not in artist.get_days_available():
                 print("Artist is not working on that day.")
