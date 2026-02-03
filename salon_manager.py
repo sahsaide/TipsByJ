@@ -5,26 +5,21 @@ from appointment import Appointment
 
 class SalonManager:
     def __init__(self):
-        # --- STAGGERED SCHEDULES ---
-        # Jenny: Early week, Mornings
         jenny_sched = {
             "Tuesday": ["09:00", "10:00", "11:00"],
             "Wednesday": ["09:00", "10:00", "11:00"]
         }
         
-        # Lisa: Late week, Afternoons
         lisa_sched = {
             "Thursday": ["13:00", "14:00", "15:00", "16:00"],
             "Friday": ["13:00", "14:00", "15:00"]
         }
         
-        # Jessica: The workhorse (Tuesday & Friday)
         jessica_sched = {
             "Tuesday": ["14:00", "15:00", "16:00"],
             "Friday": ["09:00", "10:00", "11:00"]
         }
 
-        # Initialize Artists with their specific schedules
         self.artists = [
             Artist("Jenny", jenny_sched),
             Artist("Lisa", lisa_sched),
@@ -53,27 +48,23 @@ class SalonManager:
     def book_appointment(self):
         self.show_artists()
         try:
-            # 1. Select Artist
             a_choice = int(input("\nSelect Artist ID: ")) - 1
             if a_choice < 0 or a_choice >= len(self.artists):
                 print("Invalid artist.")
                 return
             artist = self.artists[a_choice]
 
-            # 2. Select Day
             print(f"\n{artist} is available on: {artist.get_days_available()}")
             day = input("Enter Day (e.g. Tuesday): ").capitalize() # Capitalize fixes 'tuesday' input
 
             if day not in artist.get_days_available():
                 print("Artist is not working on that day.")
                 return
-
-            # 3. Select Time
+                
             available_times = artist.get_times_for_day(day)
             print(f"Available times: {available_times}")
             time = input("Enter Time: ")
-
-            # 4. Check Availability & Book
+            
             if artist.remove_slot(day, time):
                 client = input("Client Name: ")
                 
