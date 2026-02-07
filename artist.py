@@ -1,11 +1,17 @@
 class Artist:
-    def __init__(self, name, schedule):
+    def __init__(self, name, working_days, working_times):
         self.name = name
+<<<<<<< HEAD
         self.__schedule = schedule
+=======
+        self.working_days = working_days
+        self.working_times = working_times
+>>>>>>> 39ef010 (Organize services into folder and update imports)
 
-    def get_schedule(self):
-        return self.__schedule
+    def works_on(self, day):
+        return day in self.working_days
 
+<<<<<<< HEAD
     def get_days_available(self):
         return list(self.__schedule.keys())
 
@@ -26,3 +32,8 @@ class Artist:
     
     def __str__(self):
         return self.name
+=======
+    def has_time(self, time):
+        return time in self.working_times
+
+>>>>>>> 39ef010 (Organize services into folder and update imports)

@@ -1,115 +1,105 @@
 import json
-from artist import Artist
-from service import Manicure, Pedicure, AcrylicSet, PolygelTips
+import os
+
 from appointment import Appointment
+from artist import Artist
+
+from services.manicure import Manicure
+from services.pedicure import Pedicure
+from services.acrylic import AcrylicSet
+from services.polygel import PolygelTips
+
+DATA_FILE = "data.json"
+
 
 class SalonManager:
     def __init__(self):
-        jenny_sched = {
-            "Tuesday": ["09:00", "10:00", "11:00"],
-            "Wednesday": ["09:00", "10:00", "11:00"]
-        }
-        
-        lisa_sched = {
-            "Thursday": ["13:00", "14:00", "15:00", "16:00"],
-            "Friday": ["13:00", "14:00", "15:00"]
-        }
-        
-        jessica_sched = {
-            "Tuesday": ["14:00", "15:00", "16:00"],
-            "Friday": ["09:00", "10:00", "11:00"]
-        }
-
-        self.artists = [
-            Artist("Jenny", jenny_sched),
-            Artist("Lisa", lisa_sched),
-            Artist("Jessica", jessica_sched)
-        ]
-        
+        self.artists = self.create_artists()
+        self.services = self.create_services()
         self.appointments = []
         self.load_data()
 
-    def display_menu(self):
-        print("\n--- TipsByJ System ---")
-        print("1. View Artists & Schedules")
-        print("2. Book Appointment")
-        print("3. View Bookings")
-        print("4. Exit & Save")
+    def create_artists(self):
+        return [
+            Artist("Jade", ["Mon", "Wed", "Fri"], ["10:00", "12:00", "14:00"]),
+            Artist("Mila", ["Tue", "Thu", "Sat"], ["11:00", "13:00", "15:00"])
+        ]
 
-    def show_artists(self):
-        print("\n--- Artist Schedules ---")
-        for i, artist in enumerate(self.artists):
-            print(f"\n{i + 1}. {artist}")
-            schedule = artist.get_schedule()
-            for day, times in schedule.items():
-                print(f"   - {day}: {times}")
-
-    def book_appointment(self):
-        self.show_artists()
-        try:
-            a_choice = int(input("\nSelect Artist ID: ")) - 1
-            if a_choice < 0 or a_choice >= len(self.artists):
-                print("Invalid artist.")
-                return
-            artist = self.artists[a_choice]
-
-            print(f"\n{artist} is available on: {artist.get_days_available()}")
-            day = input("Enter Day (e.g. Tuesday): ").capitalize()
-
-            if day not in artist.get_days_available():
-                print("Artist is not working on that day.")
-                return
-                
-            available_times = artist.get_times_for_day(day)
-            print(f"Available times: {available_times}")
-            time = input("Enter Time: ")
-            
-            if artist.remove_slot(day, time):
-                client = input("Client Name: ")
-                
-                print("\n1. Manicure ($45)\n2. Pedicure ($60)\n3. Acrylic Set ($85)\n4. Polygel Tips ($95)")
-                s_choice = input("Select Service: ")
-                
-                if s_choice == "1": service = Manicure()
-                elif s_choice == "2": service = Pedicure()
-                elif s_choice == "3": service = AcrylicSet()
-                elif s_choice == "4": service = PolygelTips()
-                else: service = Manicure() # Default
-
-                new_appt = Appointment(client, artist.name, service.name, day, time)
-                self.appointments.append(new_appt)
-                print(f"Success! Booked {service.name} on {day} at {time}.")
-            else:
-                print("Slot unavailable.")
-
-        except ValueError:
-            print("Invalid input.")
-
-    def save_data(self):
-        data = [appt.to_dict() for appt in self.appointments]
-        with open('data.json', 'w') as f:
-            json.dump(data, f)
-        print("Saved.")
+    def create_services(self):
+        return [Manicure(), Pedicure(), AcrylicSet(), PolygelTips()]
 
     def load_data(self):
-        try:
-            with open('data.json', 'r') as f:
-                data = json.load(f)
-                for x in data:
-                    # Note: We now load 'day' as well
-                    self.appointments.append(Appointment(x['client'], x['artist'], x['service'], x.get('day', 'Tuesday'), x['time']))
-        except FileNotFoundError:
-            self.appointments = []
+        if os.path.exists(DATA_FILE):
+            with open(DATA_FILE, "r") as f:
+                self.appointments = [Appointment.from_dict(a) for a in json.load(f)]
+
+    def save_data(self):
+        with open(DATA_FILE, "w") as f:
+            json.dump([a.to_dict() for a in self.appointments], f, indent=2)
+
+    def show_artists(self):
+        for i, a in enumerate(self.artists, 1):
+            print(f"{i}. {a.name} | Days: {a.working_days} | Times: {a.working_times}")
+
+    def show_services(self):
+        for i, s in enumerate(self.services, 1):
+            print(f"{i}. {s.get_details()}")
+
+    def show_appointments(self):
+        if not self.appointments:
+            print("No appointments saved.")
+            return
+        for a in self.appointments:
+            print(a)
+
+    def book(self):
+        name = input("Client name: ")
+
+        self.show_artists()
+        artist = self.artists[int(input("Choose artist: ")) - 1]
+
+        day = input("Choose day: ")
+        if not artist.works_on(day):
+            print("Artist not available.")
+            return
+
+        time = input("Choose time: ")
+        if not artist.has_time(time):
+            print("Time not available.")
+            return
+
+        for a in self.appointments:
+            if a.artist == artist.name and a.day == day and a.time == time:
+                print("Slot already booked.")
+                return
+
+        self.show_services()
+        service = self.services[int(input("Choose service: ")) - 1]
+
+        self.appointments.append(
+            Appointment(name, artist.name, service.name, day, time, service.price)
+        )
+        print("Appointment booked.")
 
     def run(self):
         while True:
-            self.display_menu()
-            choice = input("Choice: ")
-            if choice == "1": self.show_artists()
-            elif choice == "2": self.book_appointment()
+            print("\n1. View artists")
+            print("2. View services")
+            print("3. Book appointment")
+            print("4. View appointments")
+            print("5. Save & exit")
+
+            choice = input("Choose option: ")
+
+            if choice == "1":
+                self.show_artists()
+            elif choice == "2":
+                self.show_services()
             elif choice == "3":
-                for a in self.appointments:
-                    print(f"{a.client_name}: {a.service_name} with {a.artist_name} on {a.day} @ {a.time}")
+                self.book()
             elif choice == "4":
+                self.show_appointments()
+            elif choice == "5":
                 self.save_data()
+                print("Saved. Goodbye.")
                 break
